@@ -1,0 +1,19 @@
+## C Graphics Rendering Engine ##
+
+A C based graphics rendering engine. Inspired by the
+[Ogre3d](http://www.ogre3d.org/) and [Godot](https://godotengine.org/)
+software projects with a purpose shifted towards a game engine.
+
+### Development Requirements ###
+
+* libtool
+* automake
+* autoconf
+* A C99 compiler
+* Doxygen
+* math ( libm )
+* pthreads
+
+### Building ###
+
+See INSTALL

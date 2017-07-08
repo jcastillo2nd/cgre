@@ -1,0 +1,37 @@
+.TH cgre-clockperf 1 @BUILD_YEAR@ cgre-clockperf
+.SH NAME
+cgre\-clockperf \- clock_t performance counters
+.SH SYNOPSIS
+.B cgre\-clockperf
+.RI [ OPTIONS ]
+.SH DESCRIPTION
+Check the clock_t differences for various functions across the library
+.SH OPTIONS
+.TP
+.BR \-j ", " \-\^\-json
+Print the results in JSON
+.TP
+.BR \-p " PROFILE" "\fR,\fP \-\^\-pattern=" PROFILE
+Use
+.I PROFILE
+of output
+.SH PROFILES
+.TP
+.B math
+\- Math counters show math computation performance
+.TP
+.B cgre
+\- Core cgre counters show a sample of commonly slow counters (default)
+.TP
+.B scene
+\- Scene counters show scene management performance
+.TP
+.B node
+\- Node counters show node management performance
+.TP
+.B render
+\- Render counters show pre render management performance
+.SH BUGS
+Relies on time.h
+.SH AUTHOR
+.SH SEE ALSO

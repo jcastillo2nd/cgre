@@ -1,0 +1,43 @@
+## Installing ##
+
+### From release packages ###
+
+If you have downloaded a release package ( e.g. `cgre-0.1.tar.gz` ) you can run
+the typical
+
+> tar xzf cgre-0.1.tar.gz
+> cd cgre-0.1
+> ./configure
+> make
+> make install
+
+The preferred process however is:
+
+> tar xzf cgre-0.1.tar.gz
+> cd cgre-0.1
+> cd build
+> ../configure
+> make
+> make check
+> make install
+
+### From git source ###
+
+If you have downloaded the source , you will need to establish the
+autotools configuration and cache. With the appropriate dependencies installed,
+you can run:
+
+> git clone https://github.com/jcastillo2nd/cgre.git
+> cd cgre
+> libtoolize -iqf
+> aclocal -I config --install
+> automake --foreign --add-missing --copy --force-missing
+> autoconf -f
+
+That should have a configure file generated, and you can then 
+
+> cd build
+> ../configure
+> make
+> make check
+> make install

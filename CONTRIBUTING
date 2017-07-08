@@ -1,0 +1,89 @@
+## Contributing ##
+
+All contributions are welcome and adopt the license ( and any future license )
+of the project.
+
+### Principles ###
+
+There are a lot of coding styles and principles when it comes to developing
+software. This project borrows from anything that makes sense.
+
+Here are some things to keep in mind:
+
+* Memory is cheap. Consider performance gains over memory overhead.
+* Targets are established. Plan for C99 support and 64bit systems.
+
+#### DRY ####
+
+`Don't Repeat Yourself` works great for a lot of things. Here are some things
+to consider on it:
+
+* Performance is preferred. While function call overhead can be optimized by
+the compiler in many cases, avoiding calls within the same library is
+preferred. To help identify relationships to "would be" calls, use the
+`relatedalso` doxygen directive.
+* Computations should be performant. Algorithms for computation vary. When
+possible, consider using in-function computation over intra-library calls.
+* Higher order features should be DRY, like recursion functions.
+
+#### Comments ####
+
+### Code ###
+
+For code contributions, use git. There are general workflows for various
+submissions. Some things to note that will block pull requests:
+
+* Consistency in code style
+* Required comments
+* Existing tests pass
+* Performance improvements
+
+All of these depend on an issue being created and labeled in some way by the
+core team. The `bug`, `test`, `enhancement` and `todo` labels 
+
+#### Bugs ####
+
+There will be bugs. Please ensure that you are attempting to build from the
+target build environments supported, and you are using a supported compiler
+with C99 support.
+
+* Create an issue
+* Replicate the issue with details to have it labeled `confirmed`
+* Create a branch BUGS/<issue id> on your cloned repo.
+* Submit a pull request to have the tests merged
+
+#### Tests ####
+
+Tests contributions are very much welcome. To ensure the consistency of what
+is being tested for API functions, this process is followed.
+
+* Create an issue
+* Describe the current tests, and what will be added to have it labeled `accepted`
+* Create a branch TESTS/<issue id> on your cloned repo.
+* Submit a pull request to have the tests merged
+
+Keep in mind the Makefile.am updates do not need to be addressed with the test
+pull request. It will be updated once the PR is reviewed and accepted through
+a separate process.
+
+#### Enhancements ####
+
+Software can always get better. Sometimes, this requires changing the way
+things currently work, or planning out how to integrate things that will work
+in the future.
+
+* Create an issue
+* Describe the feature(s) and integration to have it labeled `accepted`
+* Create a branch ENHANCEMENT/<issue id>
+* Write code layout with TODO comments
+* Submit a pull request to have the branch added
+
+#### TODO ####
+
+There are things that have yet to be done. Ready to work on it?
+
+* Create an issue
+* List the branch (for enhancements) and TODO(s) it will cover
+* Create a branch TODO/<issue id>
+* Write out the code for the listed todos
+* Submit a pull request to have the branch merged
