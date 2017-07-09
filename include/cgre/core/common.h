@@ -35,6 +35,18 @@ SOFTWARE.
 
 #include <cgre/math/common.h>
 
+#define CGRE_NODE(N) (N->value)
+#define CGRE_NODE_KEY_CMP(X, Y) ((X<Y)?-1:(X>Y))
+
+#define CGRE_NODES_MODE(N) (N & 3)
+#define CGRE_NODES_MODE_SET(N, M) ((N & !3) | M)
+#define CGRE_NODES_MODE_SET_VALUE(N, M) N = CGRE_NODES_MODE_SET(N, M)
+
+#define CGRE_NODES_LOCK(L) (L & 4)
+#define CGRE_NODES_LOCK_SET(L, R) ((L & !4) | R)
+#define CGRE_NODES_LOCK_FAIL 4
+#define CGRE_NODES_LOCK_SET_FAIL(N) N = CGRE_NODES_LOCK_SET(N, CGRE_NODES_LOCK_FAIL)
+
 struct cgre_node {
     void* value;
     struct cgre_node* link[2];

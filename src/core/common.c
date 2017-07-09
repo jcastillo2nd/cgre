@@ -41,30 +41,89 @@ SOFTWARE.
  */
 
 /**
- * @def CGRE_NODE_BITMASK
- * Node bitfield mask
+ * @def CGRE_NODE(N)
+ * @brief Reference the node value
+ *
+ * This macro provides the `N->value` reference. This should be type-casted
+ * from `void` pointer.
+ *
+ * @code{.c}
+ * cgre_scene *scene = (cgre_scene*) CGRE_NODE(node)
+ * @endcode
  */
 
 /**
- * @def CGRE_NODE_BITFIELD_CMP
- * Node bitfield compare
+ * @def CGRE_NODE_KEY_CMP(X, Y) (X<Y)?-1:(X>Y)
+ * @brief Compare values
  *
- * @code
- * if (CGRE_NODE_BITFIELD_CMP(node->state,
- *         CGRE_NODE_INITIALIZED & CGRE_NODE_NOVALUE)) {
- *     // ... do something
+ * This macro results in -1, 0 or 1 depending on whether the X value is less
+ * than, equal to or greater than Y value. Typically used with cgre_int_t.
+ */
+
+/**
+ * @def CGRE_NODES_MODE(N) (N & 3)
+ * @brief Compute the mode of the collection
+ *
+ * Used when comparing the mode ( last 2 bits ) of a Node collection such as
+ * `cgre_node_tree` or `cgre_node_list`.
+ *
+ * @code{.c}
+ * if (CGRE_NODES_MODE(tree->state) == CGRE_TREE_RED) {
+ *      // Do something with this red tree
  * }
  * @endcode
  */
 
 /**
- * @def CGRE_NODE_INITIALIZED
- * Initialized node bitfield
+ * @def CGRE_NODES_MODE_SET(N, M) ((N & !3) | M)
+ * @brief Compute new mode of the collection
+ *
+ * Used when setting the mode ( last 2 bits ) of a Node collection such as
+ * `cgre_node_tree` or `cgre_node_list`.
+ *
+ * @code{.c}
+ * list->state = CGRE_NODES_MODE_SET(list->state, CGRE_LIST_KEY);
+ * @endcode
  */
 
 /**
- * @def CGRE_NODE_VALUE
- * Node value bitfield
+ * @def CGRE_NODES_MODE_SET_VALUE(N, M) N = CGRE_NODES_MODE_SET(N, M)
+ * @brief Assignment of mode
+ *
+ * Used when assigning the mode ( last 2 bits ) of a Node collection such as
+ * `cgre_node_tree` or `cgre_node_list`.
+ *
+ * @code{.c}
+ * CGRE_NODES_MODE_SET_VALUE(tree->state, CGRE_TREE_BLACK);
+ * @endcode
+ */
+
+/**
+ * @def CGRE_NODES_LOCK(L, R) ((L & !4) | R)
+ * @brief Compute the lock result of the collection
+ *
+ * Used when setting the lock state ( 3rd bit ) of a Node collection such as
+ * `cgre_node_tree` or `cgre_node_list`.
+ *
+ * @code{.c}
+ * cgre_int_t fail = pthread_mutex_unlock(&(list->lock));
+ * if ( fail ) {
+ *      list->state = CGRE_NODES_LOCK(list->state, CGRE_NODE_LOCK_FAIL);
+ * }
+ */
+
+/**
+ * @def CGRE_NODES_LOCK_FAIL 4
+ * @brief Indicates the lock state is uncertain
+ */
+
+/**
+ * @def CGRE_NODES_LOCK_FAIL_SET(N) N = CGRE_NODES_LOCK(N, CGRE_NODES_LOCK_FAIL)
+ * @brief Sets the lock fail bit on state
+ *
+ * @code{.c}
+ * list->state = CGRE_NODES_LOCK_FAIL_SET(list->state)
+ * @endcode
  */
 
 /**
@@ -98,6 +157,9 @@ SOFTWARE.
 
 /**
  * @brief Generate a hash from a key
+ *
+ * Generate a unique integer evaluating the bytes of a key. There is collision
+ * like MD5 sums but for keys < 128 bytes long this works well.
  *
  * @param[in] key Value to be hashed
  * @return cgre_uint_t hash
