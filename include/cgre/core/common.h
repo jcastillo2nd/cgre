@@ -49,9 +49,12 @@ SOFTWARE.
 
 struct cgre_node {
     void* value;
-    struct cgre_node* link[2];
+    struct cgre_node* link[3];
     cgre_uint_t key;
+    cgre_uint_t mode;
     cgre_uint_t state;
+    cgre_uint_t dir;
+    pthread_mutex_t lock;
 };
 
 cgre_uint_t cgre_hash(void* key);

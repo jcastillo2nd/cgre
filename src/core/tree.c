@@ -39,7 +39,7 @@ SOFTWARE.
  */
 
 /**
- * @def CGRE_RBTREE_MAX_HEIGHT
+ * @def CGRE_TREE_MAX_HEIGHT
  * @brief The maximum height for the red-black binary search tree height.
  *
  * @remark This is is modified by the `--with-max-tree-height` configure
@@ -89,9 +89,24 @@ SOFTWARE.
  *
  * This struct provides the interface for Red-Black BSTs.
  *
+ * The state is a cgre_uint_t ( variable width - long long int, long int, or
+ * int ) and the first 8 bits should be respected for use with the library.
+ * All other bits can be used for any other purpose.
+ * 
+ * @code{.unparsed}
+ * First 16 bits of cgre_node_tree.state
+ * [x][x][x][x][x][x][x][x][7][6][5][4][3][2][1][0]
+ *
+ * [[7][6][5][4][3]] - Reserved
+ * [[2]] - Lock error bit
+ * [[1][0]] - Mode bits
+ * @endcode
+ *
  * @var struct cgre_node* root
  * The root node in the tree
- * @var cgre_int_t state
+ * @var cgre_uint_t color
+ * The color of the node
+ * @var cgre_uint_t state
  * The state of the tree
  * @note This isn't currently used by the cgre_node_tree API, so any methods
  * leveraging a tree can use this for their own needs.
@@ -112,13 +127,15 @@ struct cgre_node* cgre_tree_delete(
         struct cgre_node_tree* tree,
         cgre_uint_t key)
 {
-    struct cgre_node *nodes[CGRE_RBTREE_MAX_HEIGHT];
-    unsigned char direction[CGRE_RBTREE_MAX_HEIGHT];
+    struct cgre_node *nodes[CGRE_TREE_MAX_HEIGHT];
+    unsigned char direction[CGRE_TREE_MAX_HEIGHT];
     struct cgre_node* delete_point;
     cgre_int_t height, cmp;
     // We are going to be working on this tree
-    pthread_mutex_lock(&(tree->lock));
-
+    cgre_int_t fail = pthread_mutex_lock(&(tree->lock));
+    if (fail) {
+        CGRE_NODES_LOCK_SET_FAIL(tree->state);
+    }
     height = 0;
     delete_point = tree->root;
     for (cmp = -1; cmp != 0;
@@ -132,7 +149,10 @@ struct cgre_node* cgre_tree_delete(
         delete_point = delete_point->link[dir];
         if (delete_point == NULL)
             // We are done working on this tree
-            pthread_mutex_unlock(&(tree->lock));
+            fail = pthread_mutex_unlock(&(tree->lock));
+            if (fail) {
+                CGRE_NODES_LOCK_SET_FAIL(tree->state);
+            }
             return NULL;
       }
 
@@ -145,9 +165,9 @@ struct cgre_node* cgre_tree_delete(
 
         if (r->link[0] == NULL) {
             r->link[0] = delete_point->link[0];
-            color = r->state;
-            r->state = delete_point->state;
-            delete_point->state = color;
+            color = r->dir;
+            r->dir = delete_point->dir;
+            delete_point->dir = color;
             nodes[height - 1]->link[direction[height - 1]] = r;
             direction[height] = 1;
             nodes[height++] = r;
@@ -174,18 +194,18 @@ struct cgre_node* cgre_tree_delete(
             r->link[0] = s->link[1];
             s->link[1] = delete_point->link[1];
 
-            color = s->state;
-            s->state = delete_point->state;
-            delete_point->state = color;
+            color = s->dir;
+            s->dir = delete_point->dir;
+            delete_point->dir = color;
         }
     }
 
-    if (CGRE_NODES_MODE(delete_point->state) == CGRE_TREE_BLACK) {
+    if (delete_point->dir & CGRE_TREE_BLACK) {
         for (;;) {
             struct cgre_node *x = \
                     nodes[height - 1]->link[direction[height - 1]];
-            if (x != NULL && (CGRE_NODES_MODE(x->state) == CGRE_TREE_RED)) {
-                x->state = CGRE_NODES_MODE_SET(x->state, CGRE_TREE_BLACK);
+            if (x != NULL && (x->dir & CGRE_TREE_RED)) {
+                x->dir = CGRE_TREE_BLACK;
                 break;
             }
             if (height < 2) {
@@ -194,11 +214,9 @@ struct cgre_node* cgre_tree_delete(
             if (direction[height - 1] == 0) {
                 struct cgre_node *w = nodes[height - 1]->link[1];
 
-                if (w->state == CGRE_NODES_MODE_SET(w->state, CGRE_TREE_RED)) {
-                    w->state = CGRE_NODES_MODE_SET(w->state, CGRE_TREE_BLACK);
-                    nodes[height - 1]->state = \
-                            CGRE_NODES_MODE_SET(nodes[height - 1]->state,
-                                    CGRE_TREE_RED);
+                if (w->dir & CGRE_TREE_RED) {
+                    w->dir = CGRE_TREE_BLACK;
+                    nodes[height - 1]->dir = CGRE_TREE_RED;
 
                     nodes[height - 1]->link[1] = w->link[0];
                     w->link[0] = nodes[height - 1];
@@ -212,26 +230,23 @@ struct cgre_node* cgre_tree_delete(
                     w = nodes[height - 1]->link[1];
                 }
                 if ((w->link[0] == NULL
-                     || CGRE_NODES_MODE(w->link[0]->state) == CGRE_TREE_BLACK)
+                     || w->link[0]->dir & CGRE_TREE_BLACK)
                     && (w->link[1] == NULL
-                        || CGRE_NODES_MODE(w->link[1]->state) == CGRE_TREE_BLACK)) {
-                    w->state = CGRE_NODES_MODE_SET(w->state, CGRE_TREE_RED);
+                        || w->link[1]->dir & CGRE_TREE_BLACK)) {
+                    w->dir = CGRE_TREE_RED;
                 } else {
                     if (w->link[1] == NULL
-                        || CGRE_NODES_MODE(w->link[1]->state) == CGRE_TREE_BLACK) {
+                        || w->link[1]->dir & CGRE_TREE_BLACK) {
                         struct cgre_node *y = w->link[0];
-                        y->state = CGRE_NODES_MODE_SET(y->state, CGRE_TREE_BLACK);
-                        w->state = CGRE_NODES_MODE_SET(w->state, CGRE_TREE_RED);
+                        y->dir = CGRE_TREE_BLACK;
+                        w->dir = CGRE_TREE_RED;
                         w->link[0] = y->link[1];
                         y->link[1] = w;
                         w = nodes[height - 1]->link[1] = y;
                     }
-
-                    w->state = nodes[height - 1]->state;
-                    nodes[height - 1]->state = \
-                            CGRE_NODES_MODE_SET(nodes[height - 1]->state, CGRE_TREE_BLACK);
-                    w->link[1]->state = \
-                            CGRE_NODES_MODE_SET(w->link[1]->state, CGRE_TREE_BLACK);
+                    w->dir = nodes[height - 1]->dir;
+                    nodes[height -1]->dir = CGRE_TREE_BLACK;
+                    w->link[1]->dir = CGRE_TREE_BLACK;
 
                     nodes[height - 1]->link[1] = w->link[0];
                     w->link[0] = nodes[height - 1];
@@ -241,11 +256,9 @@ struct cgre_node* cgre_tree_delete(
             } else {
                 struct cgre_node *w = nodes[height - 1]->link[0];
 
-                if (CGRE_NODES_MODE(w->state) == CGRE_TREE_RED) {
-                    w->state = CGRE_NODES_MODE_SET(w->state, CGRE_TREE_BLACK);
-                    nodes[height - 1]->state = \
-                            CGRE_NODES_MODE_SET(nodes[height - 1]->state,
-                                    CGRE_TREE_RED);
+                if (w->dir & CGRE_TREE_RED) {
+                    w->dir = CGRE_TREE_BLACK;
+                    nodes[height - 1]->dir = CGRE_TREE_RED;
 
                     nodes[height - 1]->link[0] = w->link[1];
                     w->link[1] = nodes[height - 1];
@@ -259,26 +272,23 @@ struct cgre_node* cgre_tree_delete(
                     w = nodes[height - 1]->link[0];
                 }
                 if ((w->link[0] == NULL
-                     || CGRE_NODES_MODE(w->link[0]->state) == CGRE_TREE_BLACK)
+                     || w->link[0]->dir & CGRE_TREE_BLACK)
                     && (w->link[1] == NULL
-                        || CGRE_NODES_MODE(w->link[1]->state) == CGRE_TREE_BLACK)) {
-                    w->state = CGRE_NODES_MODE_SET(w->state, CGRE_TREE_RED);
+                        || w->link[1]->dir & CGRE_TREE_BLACK)) {
+                    w->dir = CGRE_TREE_RED;
                 } else {
                     if (w->link[0] == NULL
-                        || CGRE_NODES_MODE(w->link[0]->state) == CGRE_TREE_BLACK) {
+                        || w->link[0]->dir & CGRE_TREE_BLACK) {
                         struct cgre_node *y = w->link[1];
-                        y->state = CGRE_NODES_MODE_SET(y->state, CGRE_TREE_BLACK);
-                        w->state = CGRE_NODES_MODE_SET(w->state, CGRE_TREE_RED);
+                        y->dir = CGRE_TREE_BLACK;
+                        w->dir = CGRE_TREE_RED;
                         w->link[1] = y->link[0];
                         y->link[0] = w;
                         w = nodes[height - 1]->link[0] = y;
                     }
-
-                    w->state = nodes[height - 1]->state;
-                    nodes[height - 1]->state = \
-                            CGRE_NODES_MODE_SET(nodes[height - 1]->state, CGRE_TREE_BLACK);
-                    w->link[0]->state = \
-                            CGRE_NODES_MODE_SET(w->link[0]->state, CGRE_TREE_BLACK);
+                    w->dir = nodes[height - 1]->dir;
+                    nodes[height - 1]->dir = CGRE_TREE_BLACK;
+                    w->link[0]->dir = CGRE_TREE_BLACK;
 
                     nodes[height - 1]->link[0] = w->link[1];
                     w->link[1] = nodes[height - 1];
@@ -293,7 +303,10 @@ struct cgre_node* cgre_tree_delete(
 
     tree->count--;
     // We are done working on this tree
-    pthread_mutex_unlock(&(tree->lock));
+    fail = pthread_mutex_unlock(&(tree->lock));
+    if (fail) {
+        CGRE_NODES_LOCK_SET_FAIL(tree->state);
+    }
     return delete_point;
 }
 
@@ -316,8 +329,8 @@ struct cgre_node* cgre_tree_insert(
         struct cgre_node_tree* tree,
         struct cgre_node* node)
 {
-    struct cgre_node *nodes[CGRE_RBTREE_MAX_HEIGHT];
-    unsigned char direction[CGRE_RBTREE_MAX_HEIGHT];
+    struct cgre_node *nodes[CGRE_TREE_MAX_HEIGHT];
+    unsigned char direction[CGRE_TREE_MAX_HEIGHT];
     cgre_int_t height, cmp;
     struct cgre_node *insert_point;
 
@@ -325,10 +338,18 @@ struct cgre_node* cgre_tree_insert(
         return NULL;
     }
     // We are going to be working on this tree
-    pthread_mutex_lock(&(tree->lock));
+    cgre_int_t fail = pthread_mutex_lock(&(tree->lock));
+    if (fail) {
+        CGRE_NODES_LOCK_SET_FAIL(tree->state);
+        return NULL;
+    }
     // In case node wasn't properly "initialized", set links to NULL
     node->link[0] = node->link[1] = NULL;
-
+    // Wasn't initialized with a root
+    if (tree->root == NULL) {
+        tree->root = node;
+        tree->count++;
+    }
     nodes[0] = tree->root;
     direction[0] = 0;
     height = 1;
@@ -339,7 +360,10 @@ struct cgre_node* cgre_tree_insert(
         cmp = CGRE_NODE_KEY_CMP(insert_point->key, node->key);
         if (cmp == 0) {
             // We are done working on this tree
-            pthread_mutex_unlock(&(tree->lock));
+            fail = pthread_mutex_unlock(&(tree->lock));
+            if (fail) {
+                CGRE_NODES_LOCK_SET_FAIL(tree->state);
+            }
             // Return existing node
             return insert_point;
         }
@@ -349,16 +373,17 @@ struct cgre_node* cgre_tree_insert(
     }
 
     nodes[height - 1]->link[direction[height - 1]] = node;
-    node->state = CGRE_TREE_BLACK;
+    node->dir = CGRE_TREE_BLACK;
     tree->count++;
 
-    while (height >= 3 && nodes[height - 1]->state & CGRE_TREE_RED) {
+    while (height >= 3 && nodes[height - 1]->dir & CGRE_TREE_RED) {
         if (nodes[height - 2] == 0) {
             struct cgre_node *y = nodes[height - 2]->link[1];
 
-            if (y != NULL && y->state & CGRE_TREE_RED) {
-                nodes[height - 1]->state = y->state = CGRE_TREE_BLACK;
-                nodes[height - 2]->state = CGRE_TREE_RED;
+            if (y != NULL && y->dir & CGRE_TREE_RED) {
+                nodes[height - 1]->dir = CGRE_TREE_BLACK;
+                y->dir = CGRE_TREE_BLACK;
+                nodes[height - 2]->dir = CGRE_TREE_RED;
                 height -= 2;
             } else {
                 struct cgre_node *x;
@@ -374,8 +399,8 @@ struct cgre_node* cgre_tree_insert(
                 }
 
                 x = nodes[height - 2];
-                x->state = CGRE_TREE_RED;
-                y->state = CGRE_TREE_BLACK;
+                x->dir = CGRE_TREE_RED;
+                y->dir = CGRE_TREE_BLACK;
 
                 x->link[0] = y->link[1];
                 y->link[1] = x;
@@ -384,9 +409,10 @@ struct cgre_node* cgre_tree_insert(
             }
         } else {
             struct cgre_node *y = nodes[height - 2]->link[0];
-            if (y != NULL && y->state & CGRE_TREE_RED) {
-                nodes[height - 1]->state = y->state = CGRE_TREE_BLACK;
-                nodes[height - 2]->state = CGRE_TREE_RED;
+            if (y != NULL && y->dir & CGRE_TREE_RED) {
+                nodes[height - 1]->dir = CGRE_TREE_BLACK;
+                y->dir = CGRE_TREE_BLACK;
+                nodes[height - 2]->dir = CGRE_TREE_RED;
                 height -= 2;
             } else {
                 struct cgre_node *x;
@@ -402,8 +428,8 @@ struct cgre_node* cgre_tree_insert(
                 }
 
                 x = nodes[height - 2];
-                x->state = CGRE_TREE_RED;
-                y->state = CGRE_TREE_BLACK;
+                x->dir = CGRE_TREE_RED;
+                y->dir = CGRE_TREE_BLACK;
 
                 x->link[1] = y->link[0];
                 y->link[0] = x;
@@ -412,9 +438,12 @@ struct cgre_node* cgre_tree_insert(
             }
         }
     }
-    tree->root->state = CGRE_TREE_BLACK;
+    tree->root->dir = CGRE_TREE_BLACK;
     // We are done working on this tree
-    pthread_mutex_unlock(&(tree->lock));
+    fail = pthread_mutex_unlock(&(tree->lock));
+    if (fail) {
+        CGRE_NODES_LOCK_SET_FAIL(tree->state);
+    }
 
     return node;
 }
@@ -433,7 +462,11 @@ struct cgre_node* cgre_tree_replace(
     struct cgre_node *old;
     old = cgre_tree_search(tree, node->key);
     // We will be working on this tree
-    pthread_mutex_lock(&(tree->lock));
+    cgre_int_t fail = pthread_mutex_lock(&(tree->lock));
+    if (fail) {
+        CGRE_NODES_LOCK_SET_FAIL(tree->state);
+        return NULL;
+    }
     if (old != NULL) {
         node->link[0] = old->link[0];
         node->link[1] = old->link[1];
@@ -463,7 +496,10 @@ struct cgre_node* cgre_tree_replace(
         }
     }
     // We are done working on this tree
-    pthread_mutex_unlock(&(tree->lock));
+    fail = pthread_mutex_unlock(&(tree->lock));
+    if (fail) {
+        CGRE_NODES_LOCK_SET_FAIL(tree->state);
+    }
     return old;
 }
 
@@ -472,7 +508,7 @@ struct cgre_node* cgre_tree_replace(
  *
  * @param[in] tree Tree for search
  * @param[in] key Find node with matching key
- * @return cgre_node pointer or NULL if empty tree or not found
+ * @return cgre_node pointer or NULL if empty tree or error
  */
 struct cgre_node* cgre_tree_search(
         struct cgre_node_tree* tree,
@@ -482,7 +518,11 @@ struct cgre_node* cgre_tree_search(
         return NULL;
     }
     // We are going to be working on this tree
-    pthread_mutex_lock(&(tree->lock));
+    cgre_int_t fail = pthread_mutex_lock(&(tree->lock));
+    if (fail) {
+        CGRE_NODES_LOCK_SET_FAIL(tree->state);
+        return NULL;
+    }
     for (struct cgre_node* node = tree->root; node != NULL;){
         if (key < node->key) {
             node = node->link[0];
@@ -506,26 +546,35 @@ struct cgre_node* cgre_tree_search(
  * @param[in] root Node to set as root
  * @return cgre_node_tree pointer or NULL on error
  */
-struct cgre_node_tree* cgre_node_tree_initialize(
+struct cgre_node_tree* cgre_tree_initialize(
         struct cgre_node_tree* tree,
         struct cgre_node* root)
 {
     if (pthread_mutex_init(&(tree->lock), NULL) != 0) {
-        tree->state = tree->state | CGRE_NODES_LOCK_FAIL;
+        CGRE_NODES_LOCK_SET_FAIL(tree->state);
         return NULL;
     }
     // We are going to be working on this tree
-    pthread_mutex_lock(&(tree->lock));
+    cgre_int_t fail = pthread_mutex_lock(&(tree->lock));
+    if (fail) {
+        CGRE_NODES_LOCK_SET_FAIL(tree->state);
+    }
     tree->root = root;
     if (root != NULL) {
         tree->count = 1;
-        tree->state = CGRE_NODES_MODE_SET(tree->state, CGRE_TREE_ROOT);
+        CGRE_NODES_MODE_SET_VALUE(tree->state,
+                CGRE_TREE_ROOT);
     } else {
         tree->count = 0;
-        tree->state = CGRE_NODES_MODE_SET(tree->state, CGRE_TREE_INITIALIZED);
+        CGRE_NODES_MODE_SET_VALUE(tree->state,
+                CGRE_TREE_INITIALIZED);
     }
     // We are done working on this tree
-    pthread_mutex_unlock(&(tree->lock));
+    fail = pthread_mutex_unlock(&(tree->lock));
+    if (fail) {
+        CGRE_NODES_LOCK_SET_FAIL(tree->state);
+        return NULL;
+    }
     return tree;
 }
 
@@ -537,17 +586,17 @@ struct cgre_node_tree* cgre_node_tree_initialize(
  *
  * @warning
  * This destroys the mutex on the object. There must be no current operations
- * executed on this tree, or a NULL while the tree is uninitialized.
+ * executed on this tree, or tree is uninitialized but NULL returned.
  */
-struct cgre_node_tree* cgre_node_tree_uninitialize(
+struct cgre_node_tree* cgre_tree_uninitialize(
         struct cgre_node_tree* tree)
 {
     cgre_int_t fail = pthread_mutex_destroy(&(tree->lock));
     tree->root = NULL;
     tree->count = 0;
-    tree->state = CGRE_NODES_MODE_SET(tree->state, CGRE_TREE_UNINITIALIZED)
-    if ( fail ) {
-        tree->state = tree->state | CGRE_NODES_LOCK_FAIL;
+    CGRE_NODES_MODE_SET_VALUE(tree->state, CGRE_TREE_UNINITIALIZED);
+    if (fail) {
+        CGRE_NODES_LOCK_SET_FAIL(tree->state);
         return NULL;
     }
     return tree;

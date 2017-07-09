@@ -33,12 +33,12 @@ SOFTWARE.
 
 #include <cgre/core/common.h>
 
-#ifndef CGRE_RBTREE_MAX_HEIGHT
-#define CGRE_RBTREE_MAX_HEIGHT 18
-#endif /* ifndef CGRE_RBTREE_MAX_HEIGHT */
+#ifndef CGRE_TREE_MAX_HEIGHT
+#define CGRE_TREE_MAX_HEIGHT 18
+#endif /* ifndef CGRE_TREE_MAX_HEIGHT */
 
-#define CGRE_TREE_RED 0
-#define CGRE_TREE_BLACK 1
+#define CGRE_TREE_RED 1
+#define CGRE_TREE_BLACK 2
 
 #define CGRE_TREE_UNINITIALIZED 0
 #define CGRE_TREE_INITIALIZED 1
@@ -68,11 +68,11 @@ struct cgre_node* cgre_tree_search(
         struct cgre_node_tree* tree,
         cgre_uint_t key);
 
-struct cgre_node_tree* cgre_node_tree_initialize(
+struct cgre_node_tree* cgre_tree_initialize(
         struct cgre_node_tree* tree,
         struct cgre_node* root);
 
-struct cgre_node_tree* cgre_node_tree_uninitialize(
+struct cgre_node_tree* cgre_tree_uninitialize(
         struct cgre_node_tree* tree);
 
 #endif /* ifndef _CGRE_CORE_TREE_H_ */

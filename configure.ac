@@ -20,11 +20,11 @@ LT_INIT
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 # Options
-# TODO --with-max-tree-height=N := CGRE_RBTREE_MAX_HEIGHT default 18
-AC_SUBST([RBTREE_MAX_HEIGHT], [18])
+# TODO --with-max-tree-height=N := CGRE_TREE_MAX_HEIGHT default 18
+AC_SUBST([TREE_MAX_HEIGHT], [18])
 
 # Convenience defines
-AC_DEFINE_UNQUOTED([CGRE_RBTREE_MAX_HEIGHT], $RBTREE_MAX_HEIGHT, [Node rebalance interval])
+AC_DEFINE_UNQUOTED([CGRE_TREE_MAX_HEIGHT], $TREE_MAX_HEIGHT, [Node rebalance interval])
 AC_SUBST([START_YEAR], [2016])
 AC_DEFINE_UNQUOTED([START_YEAR], $START_YEAR, [Year of project inception])
 AC_SUBST([BUILD_YEAR], `date +%Y`)

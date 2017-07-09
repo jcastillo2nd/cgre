@@ -29,7 +29,7 @@ SOFTWARE.
 */
 
 #include <stdio.h>
-#include "clockperf.h"
+#include "cgre-clockperf.h"
 
 
 int main(int argc, char** argv)
@@ -38,9 +38,11 @@ int main(int argc, char** argv)
     RESULT (cgre_real_clamp_10k);
     RESULT (cgre_vec2_angle_between_10k);
     RESULT (cgre_vec2_oriented_angle_between_10k);
+    RESULT (cgre_tree_insert_10k);
 
     RESULT (cgre_base_atan2_100k);
     RESULT (cgre_real_clamp_100k);
     RESULT (cgre_vec2_angle_between_100k);
     RESULT (cgre_vec2_oriented_angle_between_100k);
+    RESULT (cgre_tree_insert_100k);
 }
