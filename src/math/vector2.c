@@ -30,6 +30,15 @@ SOFTWARE.
 
 #include <cgre/math/vector2.h>
 
+void cgre_vec2_add(
+        struct cgre_vector2* v1,
+        struct cgre_vector2* v2,
+        struct cgre_vector2* res)
+{
+    res->x = v1->x + v2->x;
+    res->y = v1->y + v2->y;
+}
+
 cgre_angular_t cgre_vec2_angle_between(
         struct cgre_vector2* v1,
         struct cgre_vector2* v2)
@@ -94,15 +103,6 @@ cgre_real_t cgre_vec2_normalize(
             v->y *= reciprocal;
     }
     return length;
-}
-
-void cgre_vec2_add(
-        struct cgre_vector2* v1,
-        struct cgre_vector2* v2,
-        struct cgre_vector2* res)
-{
-    res->x = v1->x + v2->x;
-    res->y = v1->y + v2->y;
 }
 
 void cgre_vec2_subtract(

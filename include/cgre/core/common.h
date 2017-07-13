@@ -57,12 +57,29 @@ struct cgre_node {
     pthread_mutex_t lock;
 };
 
+#define CGRE_NODE_HEAD 0
+#define CGRE_NODE_MIDDLE 1
+#define CGRE_NODE_TAIL 2
+
+struct cgre_node_set {
+    struct cgre_node* link[3];
+    cgre_uint_t count;
+    cgre_uint_t state;
+    pthread_mutex_t lock;
+};
+
 cgre_uint_t cgre_hash(void* key);
 
 struct cgre_node* cgre_node_initialize(
         struct cgre_node* node,
         cgre_uint_t key,
         void* value);
+
+struct cgre_node_set* cgre_node_set_initialize(
+        struct cgre_node_set* set);
+
+struct cgre_node_set* cgre_node_set_uninitialize(
+        struct cgre_node_set* set);
 
 void* cgre_node_uninitialize(
         struct cgre_node* node);

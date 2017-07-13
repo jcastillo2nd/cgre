@@ -35,9 +35,13 @@ SOFTWARE.
 #include <limits.h>
 #include <math.h>
 #include <stddef.h>
+#include <stdint.h>
 
-#define CGRE_PI 3.1415926535897932384626433832795
+#define CGRE_PI 3.1415926535897932384626433832795028841971693
 #define CGRE_TWO_PI CGRE_PI * 2.0
+
+typedef intptr_t cgre_intptr_t;
+typedef uintptr_t cgre_uintptr_t;
 
 #if HAVE_LONG_LONG_INT == 1
 
@@ -68,6 +72,7 @@ typedef long double cgre_real_t;
 #define CGRE_REAL_CAST (long double)
 #define CGRE_REAL_EPSILON LDBL_MIN
 #define CGRE_REAL_MAX LDBL_MAX
+#define CGRE_FABS (cgre_real_t) fabsl
 #define CGRE_COS (cgre_real_t) cosl
 #define CGRE_COSH (cgre_real_t) coshl
 #define CGRE_ACOS (cgre_real_t) acosl
@@ -92,6 +97,7 @@ typedef double cgre_real_t;
 #define CGRE_REAL_CAST (double)
 #define CGRE_REAL_EPSILON DBL_MIN 
 #define CGRE_REAL_MAX DBL_MAX
+#define CGRE_FABS (cgre_real_t) fabs
 #define CGRE_COS (cgre_real_t) cos
 #define CGRE_COSH (cgre_real_t) cosh
 #define CGRE_ACOS (cgre_real_t) acos
@@ -116,6 +122,7 @@ typedef float cgre_real_t;
 #define CGRE_REAL_CAST (float)
 #define CGRE_REAL_EPSILON FLT_MIN
 #define CGRE_REAL_MAX FLT_MAX
+#define CGRE_FABS (cgre_real_t) fabsf
 #define CGRE_COS (cgre_real_t) cosf
 #define CGRE_COSH (cgre_real_t) coshf
 #define CGRE_ACOS (cgre_real_t) acosf
@@ -140,7 +147,7 @@ typedef float cgre_real_t;
 
 typedef cgre_real_t cgre_angular_t;
 
-cgre_angular_t cgre_rad2deg(cgre_angular_t);
+cgre_angular_t cgre_rad2deg(cgre_angular_t rad);
 
 struct cgre_vector2 {
     cgre_real_t x, y;

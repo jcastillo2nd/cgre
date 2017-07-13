@@ -31,11 +31,11 @@ SOFTWARE.
 #ifndef _CGRE_H_
 #define _CGRE_H_
 
-#include <cgre/core/tree.h>
-#include <cgre/math/quaternion.h>
+#include <cgre/core/set.h>
+#include <cgre/math/vector2.h>
 #include <cgre/math/vector3.h>
 #include <cgre/math/vector4.h>
-#include <cgre/math/vector2.h>
+#include <cgre/math/quaternion.h>
 
 struct cgre_engine;
 

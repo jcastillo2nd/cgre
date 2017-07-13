@@ -213,7 +213,65 @@ struct cgre_node* cgre_node_initialize(
     node->value = value;
     node->link[0] = NULL;
     node->link[1] = NULL;
+    node->link[2] = NULL;
     return node;
+}
+
+/**
+ * @brief Initialize a Node Set
+ *
+ * @param[in] set The Node Set to initialize
+ */
+struct cgre_node_set* cgre_node_set_initialize(
+        struct cgre_node_set* set)
+{
+    if (pthread_mutex_init(&(set->lock), NULL) != 0) {
+        CGRE_NODES_LOCK_SET_FAIL(set->state);
+        return NULL;
+    }
+    // We are going to be working on this tree
+    cgre_int_t fail = pthread_mutex_lock(&(set->lock));
+    if (fail) {
+        CGRE_NODES_LOCK_SET_FAIL(set->state);
+        return NULL;
+    }
+    set->link[0] = NULL;
+    set->link[1] = NULL;
+    set->link[2] = NULL;
+    set->count = 0;
+    set->state = 0;
+    fail = pthread_mutex_unlock(&(set->lock));
+    if (fail) {
+        CGRE_NODES_LOCK_SET_FAIL(set->state);
+        return NULL;
+    }
+    return set;
+}
+
+/**
+ * @brief Uninitialize a Node Set
+ *
+ * @param[in] set The Node Set to uninitialize
+ * @return cgre_node_list point or NULL on error
+ *
+ * @warning
+ * This destroys the mutex on the object. There must be no current operations
+ * executed on this tree, or tree is uninitialized but NULL returned.
+ */
+struct cgre_node_set* cgre_node_set_uninitialize(
+        struct cgre_node_set* set)
+{
+    cgre_int_t fail = pthread_mutex_destroy(&(set->lock));
+    set->link[0] = NULL;
+    set->link[1] = NULL;
+    set->link[2] = NULL;
+    set->count = 0;
+    set->state = 0;
+    if (fail) {
+        CGRE_NODES_LOCK_SET_FAIL(set->state);
+        return NULL;
+    }
+    return set;
 }
 
 /**

@@ -45,12 +45,25 @@ AC_SEARCH_LIBS([pthread_create], [pthread], [],
                [AC_MSG_FAILURE([Threads library missing])])
 
 # Program Source
-AC_CONFIG_FILES([Makefile src/Makefile tests/speed/Makefile])
+#AC_CONFIG_FILES([Makefile src/Makefile tests/speed/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile])
 
 # Program Tests
-AC_CONFIG_FILES([tests/Makefile tests/cgre/Makefile tests/math/Makefile tests/core/Makefile])
+#AC_CONFIG_FILES([tests/Makefile tests/cgre/Makefile tests/math/Makefile tests/core/Makefile])
+AC_CONFIG_FILES([tests/Makefile])
+AC_CONFIG_FILES([tests/core/Makefile])
+AC_CONFIG_FILES([tests/core/cgre_node/Makefile])
+AC_CONFIG_FILES([tests/core/cgre_node/cgre_array/Makefile])
+AC_CONFIG_FILES([tests/core/cgre_node/cgre_hash_list/Makefile])
+AC_CONFIG_FILES([tests/core/cgre_node/cgre_queue/Makefile])
+AC_CONFIG_FILES([tests/core/cgre_node/cgre_stack/Makefile])
+AC_CONFIG_FILES([tests/core/cgre_node/cgre_tree/Makefile])
+AC_CONFIG_FILES([tests/math/Makefile])
+AC_CONFIG_FILES([tests/math/cgre_vector2/Makefile])
 
 # Program Docs
-AC_CONFIG_FILES([doc/Makefile doc/Doxyfile doc/src/man/cgre-clockperf.man])
+AC_CONFIG_FILES([doc/Makefile])
+AC_CONFIG_FILES([doc/Doxyfile])
+AC_CONFIG_FILES([doc/src/man/cgre-clockperf.man])
 
 AC_OUTPUT

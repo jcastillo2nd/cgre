@@ -28,5 +28,9 @@ SOFTWARE.
 ===============================================================================
 */
 
-#include "config.h"
 #include <cgre/math/common.h>
+
+cgre_angular_t cgre_rad2deg(cgre_angular_t rad)
+{
+    return rad * (180.0/CGRE_PI);
+}
